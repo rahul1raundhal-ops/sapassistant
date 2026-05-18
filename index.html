@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SAP SCO Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+<style>
+:root{
+  --bg:#f4f2ee;
+  --surface:#ffffff;
+  --surface2:#f8f7f4;
+  --border:#e2ddd6;
+  --border2:#ccc8c0;
+  --text:#1a1916;
+  --text2:#6b6860;
+  --text3:#9e9b94;
+  --accent:#0052cc;
+  --accent-bg:#e8f0fc;
+  --accent-text:#003a9e;
+  --warn-bg:#fff8e6;
+  --warn-text:#7a4f00;
+  --success-bg:#e8f7ee;
+  --success-text:#1a6b3c;
+  --danger-bg:#fef0f0;
+  --danger-text:#b91c1c;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+  --radius:8px;
+  --radius-lg:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;display:flex;flex-direction:column}
+
+/* TOPBAR */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:12px;height:56px;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:32px;height:32px;background:#0052cc;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;flex-shrink:0}
+.logo-text{font-size:15px;font-weight:600;color:var(--text)}
+.logo-sub{font-size:11px;color:var(--text3);font-weight:400}
+.topbar-tabs{display:flex;gap:2px;margin-left:32px}
+.ttab{padding:6px 14px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text2);background:none;border:none;font-family:var(--sans);display:flex;align-items:center;gap:6px;transition:background 0.15s,color 0.15s}
+.ttab:hover{background:var(--surface2);color:var(--text)}
+.ttab.active{background:var(--accent-bg);color:var(--accent-text);font-weight:500}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.save-badge{font-size:11px;padding:3px 10px;border-radius:20px;display:flex;align-items:center;gap:4px;border:1px solid}
+.save-badge.saved{background:var(--success-bg);color:var(--success-text);border-color:#a7d9b8}
+.save-badge.saving{background:var(--warn-bg);color:var(--warn-text);border-color:#f0d08a}
+.version{font-size:11px;color:var(--text3)}
+
+/* LAYOUT */
+.page{display:none;flex:1;overflow:hidden}
+.page.active{display:flex}
+
+/* ── ASSISTANT PAGE ── */
+.assistant-layout{display:flex;flex:1;overflow:hidden}
+.sidebar{width:260px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-header{padding:14px 16px 10px;border-bottom:1px solid var(--border)}
+.sidebar-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px}
+.search-box input{border:none;background:none;font-size:13px;color:var(--text);width:100%;font-family:var(--sans);outline:none}
+.search-box input::placeholder{color:var(--text3)}
+.proc-groups{flex:1;overflow-y:auto;padding:10px 8px}
+.cat-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:10px 8px 4px}
+.proc-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius);cursor:pointer;transition:background 0.12s;margin-bottom:2px}
+.proc-item:hover{background:var(--surface2)}
+.proc-item.active{background:var(--accent-bg)}
+.proc-item-name{font-size:13px;font-weight:500;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.proc-item.active .proc-item-name{color:var(--accent-text)}
+.tcode-tag{font-size:10px;font-family:var(--mono);background:var(--warn-bg);color:var(--warn-text);padding:1px 6px;border-radius:4px;flex-shrink:0;border:1px solid #f0d08a}
+
+/* main content — two-column: chat left, screenshot right */
+.main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.content-body{flex:1;display:flex;overflow:hidden}
+
+/* chat column */
+.chat-col{width:340px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--surface)}
+.chat-area{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.msg-row{display:flex;gap:10px;align-items:flex-start;max-width:100%}
+.msg-row.user{align-self:flex-end;flex-direction:row-reverse}
+.avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.avatar.bot{background:var(--accent);color:#fff}
+.avatar.user{background:var(--surface2);border:1px solid var(--border);color:var(--text2)}
+.bubble{padding:9px 12px;border-radius:10px;font-size:13px;line-height:1.6;max-width:260px}
+.bubble.bot{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:4px 10px 10px 10px}
+.bubble.user{background:var(--accent);color:#fff;border-radius:10px 4px 10px 10px}
+.bubble strong{font-weight:600}
+.step-chips{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.step-chip{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;color:var(--text);transition:border-color 0.12s,background 0.12s}
+.step-chip:hover{border-color:var(--accent);background:var(--accent-bg);color:var(--accent-text)}
+.step-chip.active{border-color:var(--accent);background:var(--accent-bg);color:var(--accent-text)}
+.step-num{width:18px;height:18px;border-radius:50%;background:var(--border);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-chip.active .step-num{background:var(--accent);color:#fff}
+.has-img-dot{width:6px;height:6px;border-radius:50%;background:#1a6b3c;flex-shrink:0;margin-left:auto}
+
+/* LARGE screenshot column */
+.ss-col{flex:1;display:flex;flex-direction:column;background:var(--bg);overflow:hidden}
+.ss-col-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.ss-col-title{font-size:13px;font-weight:600;color:var(--text)}
+.ss-step-badge{font-size:11px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);padding:2px 8px;border-radius:20px}
+
+/* THE BIG SCREENSHOT AREA */
+.ss-img-area{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  background:var(--surface2);
+  min-height:420px;
+}
+.ss-img-area img{
+  max-width:100%;
+  max-height:100%;
+  width:100%;
+  object-fit:contain;
+  display:block;
+}
+.ss-empty{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--text3);font-size:13px}
+
+.ss-caption{padding:10px 16px;font-size:13px;color:var(--text2);line-height:1.6;min-height:44px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0}
+
+/* nav arrows for steps */
+.ss-nav{display:flex;align-items:center;gap:8px;padding:8px 16px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;justify-content:space-between}
+.ss-nav-btn{display:flex;align-items:center;gap:5px;font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:var(--sans)}
+.ss-nav-btn:hover:not(:disabled){background:var(--accent-bg);color:var(--accent-text);border-color:var(--accent)}
+.ss-nav-btn:disabled{opacity:0.35;cursor:default}
+.ss-nav-center{font-size:12px;color:var(--text3)}
+
+/* chat input */
+.chat-input-bar{padding:10px 12px;border-top:1px solid var(--border);background:var(--surface);display:flex;gap:8px;flex-shrink:0}
+.chat-input-bar input{flex:1;padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);font-size:13px;font-family:var(--sans);background:var(--surface2);color:var(--text);outline:none;transition:border-color 0.15s}
+.chat-input-bar input:focus{border-color:var(--accent)}
+.send-btn{width:36px;height:36px;border-radius:var(--radius);background:var(--accent);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:opacity 0.15s}
+.send-btn:hover{opacity:0.85}
+
+/* quick pills */
+.quick-pills{display:flex;flex-wrap:wrap;gap:5px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.qp{font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:border-color 0.12s,color 0.12s}
+.qp:hover{border-color:var(--accent);color:var(--accent-text)}
+
+/* ── ADMIN PAGE ── */
+.admin-layout{display:flex;flex:1;overflow:hidden}
+.admin-left{width:280px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.admin-section{padding:14px 16px;border-bottom:1px solid var(--border)}
+.admin-section-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.proc-list-admin{flex:1;overflow-y:auto;padding:8px}
+.proc-card-admin{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:6px;cursor:pointer;transition:border-color 0.12s}
+.proc-card-admin:hover{border-color:var(--border2)}
+.proc-card-admin.sel{border-color:var(--accent);background:var(--accent-bg)}
+.proc-card-admin.sel .pca-name{color:var(--accent-text)}
+.pca-name{font-size:12px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pca-meta{font-size:10px;color:var(--text3)}
+.admin-right{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.admin-right-header{padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.admin-right-title{font-size:13px;font-weight:600;color:var(--text)}
+.step-editor-list{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.step-card-admin{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px}
+.step-card-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.step-num-badge{width:22px;height:22px;border-radius:50%;background:var(--accent-bg);color:var(--accent-text);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-name-disp{font-size:13px;font-weight:600;flex:1;color:var(--text)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.field-label{font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px}
+input[type=text],input[type=search],textarea,select{font-family:var(--sans);font-size:13px;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;width:100%;outline:none;transition:border-color 0.15s}
+input:focus,textarea:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:52px}
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:12px;text-align:center;cursor:pointer;color:var(--text3);font-size:12px;transition:border-color 0.15s,color 0.15s;margin-top:4px}
+.upload-zone:hover{border-color:var(--accent);color:var(--accent)}
+.upload-zone.has-img{border-style:solid;border-color:#a7d9b8;background:var(--success-bg)}
+.thumb-preview{max-width:100%;max-height:100px;object-fit:contain;border-radius:4px;margin-top:6px}
+
+/* ── EXPORT PAGE ── */
+.export-layout{flex:1;overflow-y:auto;padding:28px 32px;display:flex;flex-direction:column;gap:20px;max-width:780px}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px}
+.stat-val{font-size:28px;font-weight:600;color:var(--text)}
+.stat-lbl{font-size:12px;color:var(--text3);margin-top:2px}
+.section-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px}
+.section-card h3{font-size:14px;font-weight:600;margin-bottom:10px;color:var(--text)}
+.section-card p{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:10px}
+.step-list-ol{padding-left:18px;font-size:13px;color:var(--text2);line-height:2}
+.step-list-ol li code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:1px 5px;border-radius:4px;border:1px solid var(--border)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:8px 16px;border-radius:var(--radius);border:1px solid;cursor:pointer;font-family:var(--sans);font-weight:500;transition:opacity 0.15s}
+.btn:hover{opacity:0.82}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-secondary{background:var(--surface);color:var(--text);border-color:var(--border)}
+.btn-success{background:#1a6b3c;color:#fff;border-color:#1a6b3c}
+.btn-danger{background:var(--danger-bg);color:var(--danger-text);border-color:#fca5a5}
+.code-block{background:#1a1916;color:#d4d0c8;font-family:var(--mono);font-size:12px;border-radius:var(--radius-lg);padding:16px 18px;overflow-x:auto;line-height:1.7;white-space:pre}
+.code-block .cm{color:#6b7280}.code-block .ck{color:#93c5fd}.code-block .cv{color:#86efac}.code-block .cs{color:#fca5a5}
+
+/* SHARED */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text3);font-size:13px;padding:32px;text-align:center}
+.empty-state i{font-size:36px;opacity:0.25}
+.typing{display:flex;gap:4px;align-items:center;padding:3px 0}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:bop 1s infinite}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes bop{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+.divider{height:1px;background:var(--border);margin:6px 0}
+.no-proc-hint{padding:20px;font-size:13px;color:var(--text3);text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon"><i class="ti ti-box"></i></div>
+    <div>
+      <div class="logo-text">SAP SCO Assistant</div>
+      <div class="logo-sub">Supply Chain Operations</div>
+    </div>
+  </div>
+  <div class="topbar-tabs">
+    <button class="ttab active" onclick="switchPage('assistant',this)"><i class="ti ti-message-bolt"></i> Assistant</button>
+    <button class="ttab" onclick="switchPage('admin',this)"><i class="ti ti-settings"></i> Admin</button>
+    <button class="ttab" onclick="switchPage('export',this)"><i class="ti ti-download"></i> Export / Import</button>
+  </div>
+  <div class="topbar-right">
+    <span class="version">v3.0</span>
+    <span class="save-badge saved" id="saveBadge"><i class="ti ti-device-floppy"></i> All saved</span>
+  </div>
+</div>
+
+<!-- ASSISTANT PAGE -->
+<div class="page active" id="page-assistant">
+  <div class="assistant-layout">
+
+    <!-- Left sidebar: process list -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Processes</div>
+        <div class="search-box">
+          <i class="ti ti-search" style="color:var(--text3);font-size:14px"></i>
+          <input type="search" placeholder="Search..." id="sidebarSearch" oninput="filterSidebar(this.value)"/>
+        </div>
+      </div>
+      <div class="proc-groups" id="sidebarProcList">
+        <div class="no-proc-hint">No processes yet.<br>Go to <strong>Admin</strong> to add your SAP processes and screenshots.</div>
+      </div>
+    </div>
+
+    <!-- Main content: quick pills + chat col + screenshot col -->
+    <div class="main-content">
+      <div class="quick-pills" id="quickPills" style="display:none"></div>
+      <div class="content-body">
+
+        <!-- Chat column -->
+        <div class="chat-col">
+          <div class="chat-area" id="chatArea">
+            <div class="msg-row">
+              <div class="avatar bot"><i class="ti ti-robot"></i></div>
+              <div class="bubble bot">Hi! I'm your SAP SCO guide.<br>Select a process from the left or type a question below.</div>
+            </div>
+          </div>
+          <div class="chat-input-bar">
+            <input type="text" id="chatInput" placeholder="Ask about any SAP process..." onkeydown="if(event.key==='Enter')sendChat()"/>
+            <button class="send-btn" onclick="sendChat()" aria-label="Send"><i class="ti ti-send"></i></button>
+          </div>
+        </div>
+
+        <!-- Large screenshot column -->
+        <div class="ss-col">
+          <div class="ss-col-header">
+            <span class="ss-col-title" id="ssPanelTitle">SAP screen viewer</span>
+            <span class="ss-step-badge" id="ssStepBadge">No step selected</span>
+          </div>
+          <div class="ss-img-area" id="ssImgArea">
+            <div class="ss-empty">
+              <i class="ti ti-device-desktop" style="font-size:48px;opacity:0.15"></i>
+              <span>Select a process and step to view the SAP screen</span>
+            </div>
+          </div>
+          <div class="ss-caption" id="ssCaption">Click a process from the sidebar, then select a step.</div>
+          <div class="ss-nav">
+            <button class="ss-nav-btn" id="prevBtn" onclick="navigateStep(-1)" disabled><i class="ti ti-arrow-left" style="font-size:13px"></i> Previous</button>
+            <span class="ss-nav-center" id="ssNavCenter">—</span>
+            <button class="ss-nav-btn" id="nextBtn" onclick="navigateStep(1)" disabled>Next <i class="ti ti-arrow-right" style="font-size:13px"></i></button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PAGE -->
+<div class="page" id="page-admin">
+  <div class="admin-layout">
+    <div class="admin-left">
+      <div class="admin-section">
+        <div class="admin-section-title">Add process</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div><div class="field-label">Process name</div><input type="text" id="nName" placeholder="e.g. Create Stock Transfer Order"/></div>
+          <div class="grid2">
+            <div><div class="field-label">T-code</div><input type="text" id="nTcode" placeholder="e.g. MB1B"/></div>
+            <div><div class="field-label">Category</div><input type="text" id="nCat" placeholder="e.g. Inventory"/></div>
+          </div>
+          <div><div class="field-label">Description for users</div><textarea id="nDesc" placeholder="Brief description..."></textarea></div>
+          <button class="btn btn-primary" onclick="addProc()" style="width:100%;justify-content:center"><i class="ti ti-plus"></i> Add process</button>
+        </div>
+      </div>
+      <div class="admin-section-title" style="padding:10px 16px 6px;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">
+        Saved processes <span id="procCountBadge" style="font-weight:400;color:var(--text3)">(0)</span>
+      </div>
+      <div class="proc-list-admin" id="adminProcList">
+        <div class="empty-state" style="padding:20px"><i class="ti ti-folder"></i><span>No processes yet</span></div>
+      </div>
+    </div>
+    <div class="admin-right">
+      <div class="admin-right-header">
+        <span class="admin-right-title" id="adminRightTitle">Select a process to edit its steps</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-secondary" id="addStepBtn" onclick="addStep()" style="display:none;font-size:12px;padding:6px 12px"><i class="ti ti-plus" style="font-size:12px"></i> Add step</button>
+        </div>
+      </div>
+      <div class="step-editor-list" id="stepEditorList">
+        <div class="empty-state"><i class="ti ti-list"></i><span>Select a process from the left to add steps and upload screenshots</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT PAGE -->
+<div class="page" id="page-export">
+  <div class="export-layout">
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val" id="eProc">0</div><div class="stat-lbl">Processes</div></div>
+      <div class="stat-card"><div class="stat-val" id="eStep">0</div><div class="stat-lbl">Total steps</div></div>
+      <div class="stat-card"><div class="stat-val" id="eImg">0</div><div class="stat-lbl">Screenshots</div></div>
+    </div>
+    <div class="section-card">
+      <h3><i class="ti ti-info-circle" style="font-size:14px;margin-right:4px"></i> Auto-save is on</h3>
+      <p>Everything you add — processes, steps, captions, and uploaded screenshots — is automatically saved to this browser's IndexedDB storage. Your data persists across sessions and page reloads <strong>on this device</strong>.</p>
+      <p>To use on another device or share with a teammate, export your data as JSON and import it there.</p>
+    </div>
+    <div class="section-card">
+      <h3><i class="ti ti-database-export" style="font-size:14px;margin-right:4px"></i> Data management</h3>
+      <div class="btn-row">
+        <button class="btn btn-success" onclick="exportJSON()"><i class="ti ti-download"></i> Export JSON</button>
+        <button class="btn btn-primary" onclick="document.getElementById('importFile').click()"><i class="ti ti-upload"></i> Import JSON</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(this)"/>
+        <button class="btn btn-danger" onclick="clearAll()"><i class="ti ti-trash"></i> Clear all data</button>
+      </div>
+    </div>
+    <div class="section-card">
+      <h3><i class="ti ti-brand-github" style="font-size:14px;margin-right:4px"></i> GitHub Pages — deploy in 5 minutes</h3>
+      <ol class="step-list-ol">
+        <li>Go to <strong>github.com</strong> → sign in → click <strong>New repository</strong></li>
+        <li>Name it <code>sap-sco-assistant</code> → set to <strong>Public</strong> → click Create</li>
+        <li>Click <strong>uploading an existing file</strong> → drag in this <code>index.html</code> file</li>
+        <li>Export your data above and drag the <code>processes.json</code> file too</li>
+        <li>Commit both files</li>
+        <li>Go to <strong>Settings → Pages</strong> → Source: <em>Deploy from branch</em> → branch: <em>main</em> → Save</li>
+        <li>Wait ~60 seconds → your live URL appears: <code>https://yourusername.github.io/sap-sco-assistant</code></li>
+      </ol>
+    </div>
+    <div class="section-card">
+      <h3><i class="ti ti-code" style="font-size:14px;margin-right:4px"></i> Load data from JSON file (optional)</h3>
+      <p>By default all data is stored in IndexedDB. If you want the GitHub Pages version to load from a JSON file on the server, place <code>processes.json</code> next to <code>index.html</code> — this app auto-fetches it on startup and merges with local storage.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+let DB, processes = [], selProcIdx = null, aiProcIdx = null, aiStepIdx = null;
+const STORE = 'sap_sco_v2';
+
+// ─── INDEXEDDB ───────────────────────────────────────────
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open('SapScoGH', 2);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath: 'id' });
+    };
+    req.onsuccess = e => { DB = e.target.result; res(); };
+    req.onerror = () => rej(req.error);
+  });
+}
+function dbSave() {
+  setSave('saving');
+  const tx = DB.transaction(STORE, 'readwrite');
+  tx.objectStore(STORE).put({ id: 'main', data: processes });
+  tx.oncomplete = () => setSave('saved');
+  tx.onerror = () => setSave('error');
+}
+function dbLoad() {
+  return new Promise(res => {
+    const tx = DB.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).get('main');
+    req.onsuccess = () => { if (req.result) processes = req.result.data; res(); };
+    req.onerror = () => res();
+  });
+}
+function setSave(state) {
+  const el = document.getElementById('saveBadge');
+  if (state === 'saved') { el.className = 'save-badge saved'; el.innerHTML = '<i class="ti ti-device-floppy"></i> All saved'; }
+  else if (state === 'saving') { el.className = 'save-badge saving'; el.innerHTML = '<i class="ti ti-refresh"></i> Saving...'; }
+  else { el.className = 'save-badge saving'; el.innerHTML = '<i class="ti ti-alert-circle"></i> Save error'; }
+}
+
+async function tryFetchJSON() {
+  try {
+    const r = await fetch('processes.json');
+    if (!r.ok) return;
+    const data = await r.json();
+    if (data && Array.isArray(data.processes)) mergeProcesses(data.processes, false);
+  } catch {}
+}
+function mergeProcesses(incoming, save = true) {
+  const existing = new Set(processes.map(p => p.name.toLowerCase()));
+  let added = 0;
+  for (const p of incoming) {
+    if (!existing.has(p.name.toLowerCase())) { processes.push(p); added++; }
+  }
+  if (added > 0 && save) dbSave();
+  refreshAll();
+}
+
+// ─── PAGE SWITCHING ───────────────────────────────────────
+function switchPage(page, el) {
+  document.querySelectorAll('.ttab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  if (page === 'export') updateExportStats();
+}
+
+// ─── SIDEBAR ─────────────────────────────────────────────
+function renderSidebar(filter) {
+  const el = document.getElementById('sidebarProcList');
+  const list = filter ? processes.filter(p => (p.name + p.tcode + p.category + p.description).toLowerCase().includes(filter.toLowerCase())) : processes;
+  if (!list.length) {
+    el.innerHTML = processes.length
+      ? '<div class="no-proc-hint">No match found.</div>'
+      : '<div class="no-proc-hint">No processes yet.<br>Go to <strong>Admin</strong> to add processes.</div>';
+    buildQuickPills([]);
+    return;
+  }
+  const cats = [...new Set(list.map(p => p.category || 'General'))];
+  el.innerHTML = cats.map(cat => `
+    <div class="cat-label">${esc(cat)}</div>
+    ${list.filter(p => (p.category || 'General') === cat).map(p => {
+      const i = processes.indexOf(p);
+      return `<div class="proc-item${aiProcIdx === i ? ' active' : ''}" onclick="selectAiProc(${i})">
+        <span class="proc-item-name">${esc(p.name)}</span>
+        ${p.tcode ? `<span class="tcode-tag">${esc(p.tcode)}</span>` : ''}
+      </div>`;
+    }).join('')}
+  `).join('');
+  buildQuickPills(list.slice(0, 5));
+}
+function filterSidebar(v) { renderSidebar(v || undefined); }
+function buildQuickPills(list) {
+  const el = document.getElementById('quickPills');
+  if (!list.length) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.innerHTML = '<span style="font-size:11px;color:var(--text3);align-self:center;flex-shrink:0">Quick:</span>' +
+    list.map(p => { const i = processes.indexOf(p); return `<button class="qp" onclick="selectAiProc(${i})">${esc(p.name)}</button>`; }).join('');
+}
+
+// ─── AI ASSISTANT ─────────────────────────────────────────
+function selectAiProc(idx) {
+  aiProcIdx = idx; aiStepIdx = null;
+  renderSidebar(document.getElementById('sidebarSearch').value || undefined);
+  const p = processes[idx];
+  addBotBubble(`<strong>${esc(p.name)}</strong>${p.tcode ? ' <span style="font-family:monospace;font-size:11px;background:var(--warn-bg);color:var(--warn-text);padding:1px 6px;border-radius:4px;border:1px solid #f0d08a">' + esc(p.tcode) + '</span>' : ''}<br>${p.description ? '<span style="color:var(--text2)">' + esc(p.description) + '</span><br>' : ''}${p.steps.length ? 'Click a step to view the SAP screen:' : '<em style="color:var(--text3)">No steps added yet.</em>'}` + (p.steps.length ? `<div class="step-chips" style="margin-top:8px">${p.steps.map((s, i) => `<div class="step-chip" id="chip-${i}" onclick="selectStep(${i})"><span class="step-num">${i + 1}</span>${esc(s.name) || 'Step ' + (i + 1)}${s.image ? '<span class="has-img-dot" title="Has screenshot"></span>' : ''}</div>`).join('')}</div>` : ''));
+  document.getElementById('ssPanelTitle').textContent = p.name + (p.tcode ? ' — ' + p.tcode : '');
+  document.getElementById('ssImgArea').innerHTML = '<div class="ss-empty"><i class="ti ti-hand-click" style="font-size:48px;opacity:0.15"></i><span>Click a step to view the SAP screen</span></div>';
+  document.getElementById('ssCaption').textContent = p.description || 'Select a step to see its SAP screen.';
+  document.getElementById('ssStepBadge').textContent = p.steps.length + ' steps';
+  document.getElementById('ssNavCenter').textContent = '—';
+  document.getElementById('prevBtn').disabled = true;
+  document.getElementById('nextBtn').disabled = true;
+  if (p.steps.length) selectStep(0);
+}
+
+function selectStep(idx) {
+  if (aiProcIdx === null) return;
+  const p = processes[aiProcIdx];
+  if (idx < 0 || idx >= p.steps.length) return;
+  aiStepIdx = idx;
+  const s = p.steps[idx];
+
+  document.querySelectorAll('.step-chip').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+    const sn = el.querySelector('.step-num');
+    if (sn) { sn.style.background = i === idx ? 'var(--accent)' : ''; sn.style.color = i === idx ? '#fff' : ''; }
+  });
+
+  const area = document.getElementById('ssImgArea');
+  area.innerHTML = s.image
+    ? `<img src="${s.image}" alt="${esc(s.name)} SAP screenshot"/>`
+    : '<div class="ss-empty"><i class="ti ti-photo-off" style="font-size:48px;opacity:0.15"></i><span>No screenshot uploaded for this step</span></div>';
+
+  document.getElementById('ssCaption').textContent = s.caption || 'No caption added for this step.';
+  document.getElementById('ssStepBadge').textContent = 'Step ' + (idx + 1) + ' of ' + p.steps.length;
+  document.getElementById('ssNavCenter').textContent = 'Step ' + (idx + 1) + ' of ' + p.steps.length;
+  document.getElementById('prevBtn').disabled = idx === 0;
+  document.getElementById('nextBtn').disabled = idx === p.steps.length - 1;
+}
+
+function navigateStep(dir) {
+  if (aiStepIdx === null || aiProcIdx === null) return;
+  selectStep(aiStepIdx + dir);
+}
+
+function addBotBubble(html) {
+  const area = document.getElementById('chatArea');
+  const row = document.createElement('div');
+  row.className = 'msg-row';
+  row.innerHTML = `<div class="avatar bot"><i class="ti ti-robot"></i></div><div class="bubble bot">${html}</div>`;
+  area.appendChild(row);
+  area.scrollTop = area.scrollHeight;
+}
+function addUserBubble(text) {
+  const area = document.getElementById('chatArea');
+  const row = document.createElement('div');
+  row.className = 'msg-row user';
+  row.innerHTML = `<div class="avatar user"><i class="ti ti-user"></i></div><div class="bubble user">${esc(text)}</div>`;
+  area.appendChild(row);
+  area.scrollTop = area.scrollHeight;
+}
+function sendChat() {
+  const inp = document.getElementById('chatInput');
+  const q = inp.value.trim(); if (!q) return;
+  addUserBubble(q); inp.value = '';
+  const area = document.getElementById('chatArea');
+  const td = document.createElement('div'); td.className = 'msg-row';
+  td.innerHTML = '<div class="avatar bot"><i class="ti ti-robot"></i></div><div class="bubble bot"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>';
+  area.appendChild(td); area.scrollTop = area.scrollHeight;
+  setTimeout(() => {
+    area.removeChild(td);
+    if (!processes.length) { addBotBubble('No processes added yet. Go to the <strong>Admin</strong> tab to add your SAP processes.'); return; }
+    const ql = q.toLowerCase();
+    const match = processes.find(p => ql.split(' ').some(w => w.length > 2 && (p.name + p.tcode + p.category + p.description).toLowerCase().includes(w)));
+    if (match) { selectAiProc(processes.indexOf(match)); }
+    else { addBotBubble('I couldn\'t find an exact match. Here are all available processes — click one to start:<br><div class="step-chips" style="margin-top:8px">' + processes.map((p, i) => `<div class="step-chip" onclick="selectAiProc(${i})">${esc(p.name)}</div>`).join('') + '</div>'); }
+  }, 700);
+}
+
+// ─── ADMIN ────────────────────────────────────────────────
+function addProc() {
+  const name = document.getElementById('nName').value.trim();
+  if (!name) { alert('Please enter a process name.'); return; }
+  processes.push({
+    name, tcode: document.getElementById('nTcode').value.trim(),
+    category: document.getElementById('nCat').value.trim() || 'General',
+    description: document.getElementById('nDesc').value.trim(), steps: []
+  });
+  ['nName', 'nTcode', 'nCat', 'nDesc'].forEach(id => document.getElementById(id).value = '');
+  dbSave(); refreshAll(); selectAdminProc(processes.length - 1);
+}
+function renderAdminProcList() {
+  const el = document.getElementById('adminProcList');
+  document.getElementById('procCountBadge').textContent = '(' + processes.length + ')';
+  if (!processes.length) { el.innerHTML = '<div class="empty-state" style="padding:20px"><i class="ti ti-folder"></i><span>No processes yet</span></div>'; return; }
+  el.innerHTML = processes.map((p, i) => `
+    <div class="proc-card-admin${selProcIdx === i ? ' sel' : ''}" onclick="selectAdminProc(${i})">
+      <div style="flex:1;min-width:0">
+        <div class="pca-name">${esc(p.name)}</div>
+        <div class="pca-meta">${p.tcode ? p.tcode + ' · ' : ''}${p.steps.length} step${p.steps.length !== 1 ? 's' : ''}</div>
+      </div>
+      <button class="btn btn-danger" style="padding:3px 8px;font-size:11px" onclick="event.stopPropagation();deleteProc(${i})"><i class="ti ti-trash" style="font-size:11px"></i></button>
+    </div>`).join('');
+}
+function selectAdminProc(idx) {
+  selProcIdx = idx;
+  renderAdminProcList();
+  document.getElementById('adminRightTitle').textContent = 'Steps: ' + processes[idx].name;
+  document.getElementById('addStepBtn').style.display = 'inline-flex';
+  renderStepEditor();
+}
+function deleteProc(idx) {
+  if (!confirm('Delete "' + processes[idx].name + '" and all its steps?')) return;
+  processes.splice(idx, 1);
+  if (selProcIdx === idx) { selProcIdx = null; document.getElementById('addStepBtn').style.display = 'none'; document.getElementById('adminRightTitle').textContent = 'Select a process to edit its steps'; document.getElementById('stepEditorList').innerHTML = '<div class="empty-state"><i class="ti ti-list"></i><span>Select a process</span></div>'; }
+  else if (selProcIdx > idx) selProcIdx--;
+  dbSave(); refreshAll();
+}
+function addStep() {
+  if (selProcIdx === null) return;
+  processes[selProcIdx].steps.push({ name: '', caption: '', tcode: '', image: null, imageName: '' });
+  dbSave(); renderStepEditor(); renderAdminProcList();
+}
+function renderStepEditor() {
+  if (selProcIdx === null) return;
+  const steps = processes[selProcIdx].steps;
+  const el = document.getElementById('stepEditorList');
+  if (!steps.length) { el.innerHTML = '<div class="empty-state"><i class="ti ti-plus"></i><span>Click "Add step" to create the first step</span></div>'; return; }
+  el.innerHTML = steps.map((s, i) => `
+    <div class="step-card-admin" id="sca-${i}">
+      <div class="step-card-header">
+        <span class="step-num-badge">${i + 1}</span>
+        <span class="step-name-disp">${esc(s.name) || '<span style="color:var(--text3);font-weight:400">Untitled step</span>'}</span>
+        <button class="btn btn-danger" style="padding:3px 8px;font-size:11px;margin-left:auto" onclick="deleteStep(${i})"><i class="ti ti-trash" style="font-size:11px"></i></button>
+      </div>
+      <div class="grid2">
+        <div><div class="field-label">Step name</div><input type="text" value="${esc(s.name)}" placeholder="e.g. Enter movement type" oninput="updStep(${i},'name',this.value)"/></div>
+        <div><div class="field-label">Transaction code</div><input type="text" value="${esc(s.tcode)}" placeholder="e.g. MB1B" oninput="updStep(${i},'tcode',this.value)"/></div>
+      </div>
+      <div style="margin-top:8px"><div class="field-label">Caption / instruction for users</div><textarea placeholder="What should the user do on this screen?" oninput="updStep(${i},'caption',this.value)">${esc(s.caption)}</textarea></div>
+      <div style="margin-top:8px"><div class="field-label">SAP screenshot</div>
+        <div class="upload-zone${s.image ? ' has-img' : ''}" onclick="trigUp(${i})" id="uz-${i}">
+          ${s.image ? `<div style="font-size:12px;color:var(--success-text)"><i class="ti ti-check"></i> ${esc(s.imageName)} — click to replace</div><img src="${s.image}" class="thumb-preview" alt="step ${i + 1} screenshot"/>` : '<i class="ti ti-upload" style="font-size:20px;display:block;margin-bottom:4px"></i>Click to upload SAP screenshot'}
+        </div>
+        <input type="file" accept="image/*" style="display:none" id="fi-${i}" onchange="handleUp(${i},this)"/>
+      </div>
+    </div>`).join('');
+}
+function updStep(idx, field, val) {
+  if (selProcIdx === null) return;
+  processes[selProcIdx].steps[idx][field] = val;
+  if (field === 'name') { const d = document.querySelector(`#sca-${idx} .step-name-disp`); if (d) d.innerHTML = val ? esc(val) : '<span style="color:var(--text3);font-weight:400">Untitled step</span>'; }
+  clearTimeout(window._saveT); window._saveT = setTimeout(() => { dbSave(); renderSidebar(); }, 900);
+}
+function deleteStep(idx) { processes[selProcIdx].steps.splice(idx, 1); dbSave(); renderStepEditor(); renderAdminProcList(); }
+function trigUp(idx) { document.getElementById('fi-' + idx).click(); }
+function handleUp(idx, input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => { processes[selProcIdx].steps[idx].image = e.target.result; processes[selProcIdx].steps[idx].imageName = file.name; dbSave(); renderStepEditor(); renderAdminProcList(); };
+  reader.readAsDataURL(file); input.value = '';
+}
+
+// ─── EXPORT / IMPORT ─────────────────────────────────────
+function updateExportStats() {
+  document.getElementById('eProc').textContent = processes.length;
+  document.getElementById('eStep').textContent = processes.reduce((a, p) => a + p.steps.length, 0);
+  document.getElementById('eImg').textContent = processes.reduce((a, p) => a + p.steps.filter(s => s.image).length, 0);
+}
+function exportJSON() {
+  if (!processes.length) { alert('No processes to export.'); return; }
+  const blob = new Blob([JSON.stringify({ version: '2.0', module: 'SAP SCO', exportedAt: new Date().toISOString(), processes }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'processes.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+function importJSON(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data.processes)) throw new Error();
+      if (!confirm('Import ' + data.processes.length + ' processes? They will be merged with existing data.')) return;
+      mergeProcesses(data.processes);
+      alert('Imported ' + data.processes.length + ' processes successfully!');
+    } catch { alert('Could not read this file — please use a file exported from this app.'); }
+  };
+  reader.readAsText(file); input.value = '';
+}
+function clearAll() {
+  if (!confirm('Permanently delete ALL processes and screenshots?')) return;
+  processes = []; selProcIdx = null; aiProcIdx = null; aiStepIdx = null; dbSave(); refreshAll();
+  document.getElementById('adminRightTitle').textContent = 'Select a process to edit its steps';
+  document.getElementById('addStepBtn').style.display = 'none';
+  document.getElementById('stepEditorList').innerHTML = '<div class="empty-state"><i class="ti ti-list"></i><span>Select a process</span></div>';
+  document.getElementById('ssImgArea').innerHTML = '<div class="ss-empty"><i class="ti ti-device-desktop" style="font-size:48px;opacity:0.15"></i><span>Select a process and step to view the SAP screen</span></div>';
+  document.getElementById('ssCaption').textContent = 'Click a process from the sidebar, then select a step.';
+  document.getElementById('ssStepBadge').textContent = 'No step selected';
+  document.getElementById('ssNavCenter').textContent = '—';
+  document.getElementById('prevBtn').disabled = true;
+  document.getElementById('nextBtn').disabled = true;
+  document.getElementById('chatArea').innerHTML = '<div class="msg-row"><div class="avatar bot"><i class="ti ti-robot"></i></div><div class="bubble bot">Data cleared. Go to <strong>Admin</strong> to add new processes.</div></div>';
+  updateExportStats();
+}
+
+// ─── UTILS ───────────────────────────────────────────────
+function refreshAll() { renderSidebar(); renderAdminProcList(); updateExportStats(); }
+function esc(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
+
+// ─── INIT ─────────────────────────────────────────────────
+openDB().then(() => dbLoad()).then(() => { refreshAll(); setSave('saved'); tryFetchJSON(); }).catch(() => { refreshAll(); });
+</script>
+</body>
+</html>
