@@ -7,6 +7,23 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+
+<!-- ═══════════════════════════════════════════════════════════
+     GOOGLE ANALYTICS 4  —  SETUP REQUIRED
+     1. Go to https://analytics.google.com → create a GA4 property
+     2. Copy your Measurement ID  (looks like  G-EEEVLM5T5Y)
+     3. Replace  G-EEEVLM5T5Y  in the two lines below
+     ═══════════════════════════════════════════════════════════ -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-EEEVLM5T5Y"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-EEEVLM5T5Y', {
+    page_title: 'SAP SCO Assistant',
+    page_location: window.location.href
+  });
+</script>
 <style>
 :root{
   --bg:#f4f2ee;
@@ -469,6 +486,18 @@ function selectAiProc(idx) {
   aiProcIdx = idx; aiStepIdx = null;
   renderSidebar(document.getElementById('sidebarSearch').value || undefined);
   const p = processes[idx];
+
+  // ── GA4: track which process was opened ──────────────────
+  if (typeof gtag === 'function') {
+    gtag('event', 'process_opened', {
+      event_category: 'SAP Process',
+      event_label: p.name,
+      process_name: p.name,
+      process_tcode: p.tcode || '(none)',
+      process_category: p.category || 'General'
+    });
+  }
+  // ────────────────────────────────────────────────────────
   addBotBubble(`<strong>${esc(p.name)}</strong>${p.tcode ? ' <span style="font-family:monospace;font-size:11px;background:var(--warn-bg);color:var(--warn-text);padding:1px 6px;border-radius:4px;border:1px solid #f0d08a">' + esc(p.tcode) + '</span>' : ''}<br>${p.description ? '<span style="color:var(--text2)">' + esc(p.description) + '</span><br>' : ''}${p.steps.length ? 'Click a step to view the SAP screen:' : '<em style="color:var(--text3)">No steps added yet.</em>'}` + (p.steps.length ? `<div class="step-chips" style="margin-top:8px">${p.steps.map((s, i) => `<div class="step-chip" id="chip-${i}" onclick="selectStep(${i})"><span class="step-num">${i + 1}</span>${esc(s.name) || 'Step ' + (i + 1)}${s.image ? '<span class="has-img-dot" title="Has screenshot"></span>' : ''}</div>`).join('')}</div>` : ''));
   document.getElementById('ssPanelTitle').textContent = p.name + (p.tcode ? ' — ' + p.tcode : '');
   document.getElementById('ssImgArea').innerHTML = '<div class="ss-empty"><i class="ti ti-hand-click" style="font-size:48px;opacity:0.15"></i><span>Click a step to view the SAP screen</span></div>';
@@ -530,6 +559,16 @@ function sendChat() {
   const inp = document.getElementById('chatInput');
   const q = inp.value.trim(); if (!q) return;
   addUserBubble(q); inp.value = '';
+
+  // ── GA4: track search queries ────────────────────────────
+  if (typeof gtag === 'function') {
+    gtag('event', 'process_searched', {
+      event_category: 'Search',
+      event_label: q,
+      search_term: q
+    });
+  }
+  // ────────────────────────────────────────────────────────
   const area = document.getElementById('chatArea');
   const td = document.createElement('div'); td.className = 'msg-row';
   td.innerHTML = '<div class="avatar bot"><i class="ti ti-robot"></i></div><div class="bubble bot"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>';
